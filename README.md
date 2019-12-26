@@ -49,6 +49,7 @@ devtool: 'source-map' // 生成对于打包后调试的完整的.map文件，但
 - include/exclude： 手动添加必须处理的文件（文件夹）或屏蔽不需要处理的文件（文件夹）（可选）options： 为loaders提供额外的设置选项（可选）
 
 ```
+npm install babel-loader @babel/core @babel/preset-env -D
 npm install babel-loader babel-core babel-preset-env -D
 // 使用install babel是会出现版本问题, 两种办法
 // 1. webpack 4.x | babel-loader 7.x | babel 6.x 回退低版本
@@ -80,6 +81,58 @@ module: {
     },
   ]  
 }
+
+npm install postcss-loader autoprefixer postcss-pxtorem -D
+
+loader:"postcss-loader"
+// postcss.config.js
+module.exports = {
+  plugins: {
+    autoprefixer: {},
+    'postcss-pxtorem': {
+      rootValue: 37.5,
+      propList: ['*']
+    }
+  }
+}
+
+npm install --save-dev mini-css-extract-plugin optimize-css-assets-webpack-plugin 
+optimization:{                          // 优化项
+  minimizer:[
+    new OptimizeCss()                   // 压缩css插件
+  ]
+},
+替代style-loader
+MiniCssExtractPiugin.loader
+
+
+cnpm install file-loader url-loader html-withimg-loader -D
+    {
+      // 打包html模板文件中img标签的图片
+      test: /\.html$/,
+      loader: "html-withimg-loader"
+    },
+		{
+			test: /\.(gif|jpe?g|png|bmp|webp|svg)(\?.*)?$/,
+			use: [{
+				loader: 'url-loader',
+				options: {
+					limit: 4 * 1024, 
+					name: 'img/[name].[hash:8].[ext]',
+					// publicPath: 'img/',//将css中引用的背景图片打包到output.path + publicPath + name
+					// outputPath: ''
+
+					// fallback: { //此处无需配置file-loader的回调也可正常构建，url-loader会自动调用，并共享name等配置项目
+					// 	loader: 'file-loader',
+					// 	options: {
+					// 		name: 'img/[name].[hash:8].[ext]',
+					// 		// publicPath: 'img/',//将css中引用的背景图片打包到output.path + publicPath + name
+					// 		// outputPath: ''
+					// 	}
+					// }
+				}
+			}]
+		},
 ```
 
 ## 七、Plugins（插件）

@@ -3,16 +3,19 @@ const path = require('path');   // 引入我们的node模块里的path
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const OptimizeCss = require("optimize-css-assets-webpack-plugin")
+const webpack = require("webpack")
 
 const pages = [
   {                             
     template: './src/pages/Home/home.html',  
-    filename: 'home.html',         
+    filename: 'home.html'      
   },
   {
     template: "./src/pages/Test/test.html",
     filename: "test.html",
     inject : 'head',                       // 指定生成的js文件是在head里还是在body里面,不写默认在body里面
+    chunks:["test"],                       // 引入入口的的test js文件
     minify:{
       removeComments : true,               // 删除注释
       collapseInlineTagWhitespace : true,  // 去除换行符
@@ -22,7 +25,14 @@ const pages = [
     hash:true                              // 引入加入?41f1591fbdcae2c85e5a
   }
 ]
+
 module.exports = {
+  optimization:{                          // 优化项
+    minimizer:[
+      new OptimizeCss()                   // 压缩css插件
+    ]
+  },
+
   mode:'development',                      // development | production
   entry: {
     test: './src/pages/Test/test.js'
@@ -41,8 +51,8 @@ module.exports = {
       {
         test: /\.js$/,                         // es6 => es5 
         include: [path.resolve(__dirname, 'src')],
-        // exclude: path.resolve(__dirname, 'node_modules'),  //不匹配选项（优先级高于test和include）
         loader: "babel-loader",
+        // exclude: path.resolve(__dirname, 'node_modules'),  //不匹配选项（优先级高于test和include）
         // options: {            // loader的可选项
         //   presets: ["es2015"]
         // },
@@ -52,22 +62,48 @@ module.exports = {
         use: ['vue-loader']
       },
       {
+        // 打包html模板文件中img标签的图片
+        test: /\.html$/,
+        loader: "html-withimg-loader"
+      },
+      {
         test: /\.css$/,                      // 正则匹配以.css结尾的文件
-        use: [{loader: 'style-loader',options:{insertAt:'top'}}, 'css-loader']  // style-loader将css插入head的style标签中
+        use: [{loader: 'style-loader',options:{insertAt:'top'}}, 'css-loader','postcss-loader']  // style-loader将css插入head的style标签中
       },
       {
         test: /\.(scss|sass)$/,              // 正则匹配以.scss和.sass结尾的文件
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
-          use: ['css-loader', 'sass-loader']
+          use: ['css-loader', 'postcss-loader','sass-loader']
         })
       },
       {
         test: /\.less$/,                     // 正则匹配以.less结尾的文件
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
-          use: ['css-loader', 'less-loader']
+          use: ['css-loader', 'postcss-loader','less-loader']
         })
+      },
+      {
+        test: /\.(gif|jpe?g|png|bmp|webp|svg)(\?.*)?$/,
+        use: [{
+          loader: 'url-loader',
+          options: {
+            limit: 4 * 1024, // 小于4k 用把铯4
+            name: 'img/[name].[hash:8].[ext]',
+            // publicPath: 'img/',          // 将css中引用的背景图片打包到output.path + publicPath + name
+            // outputPath: 'http:new.baidu.com/'     // 输出路径 http:new.baidu.com/
+  
+            // fallback: { //此处无需配置file-loader的回调也可正常构建，url-loader会自动调用，并共享name等配置项目
+            // 	loader: 'file-loader',
+            // 	options: {
+            // 		name: 'img/[name].[hash:8].[ext]',
+            // 		// publicPath: 'img/',//将css中引用的背景图片打包到output.path + publicPath + name
+            // 		// outputPath: ''
+            // 	}
+            // }
+          }
+        }]
       },
     ],
   },
@@ -75,6 +111,17 @@ module.exports = {
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin(pages[1]),
     new ExtractTextPlugin('[name].css'),
+
+    // new webpack.ProvidePlugin:{  // 每个模块注入$
+        // main.js import "$" from "jquery"
+    //   $:"jquery"  
+    // }
+
+    // externals:{
+    //   // 使用cdn加载时可以取消对jquery打包
+    //   jquery:"$"
+    // }
+
     // 压缩输出的 JS 代码
     // new UglifyJsPlugin({ // 最紧凑的输出
     //   beautify: false,   // 删除所有的注释
@@ -101,5 +148,10 @@ module.exports = {
     //   }
     // },
   },
-  devtool: 'source-map', // 生成对于打包后调试的完整的.map文件，但同时也会减慢打包速度
+  /**
+   * 
+   * 
+   * 
+   *  */ 
+  devtool: 'eval-source-map', // 生成对于打包后调试的完整的.map文件，但同时也会减慢打包速度
 }
