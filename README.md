@@ -57,6 +57,14 @@ npm install -D babel-loader@7 babel-core babel-preset-env
 // 2. webpack 4.x | babel-loader 8.x | babel7.x 更新到最高版本
 npm install -D babel-loader @babel/core @babel/preset-env webpack  
 
+npm install vue vue-loader vue-template-compiler vue-style-loader --save-dev
+const VueLoaderPlugin = require('vue-loader/lib/plugin');
+{
+    test: /\.vue$/,
+    use: ['vue-loader']
+},
+new VueLoaderPlugin()
+
 npm install style-loader css-loader less less-loader -D
 npm install sass-loader node-sass style-loader -D // 因为sass-loader依赖于node-sass，所以还要安装node-sass
 module: {

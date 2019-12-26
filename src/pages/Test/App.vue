@@ -1,5 +1,7 @@
 <template>
-  <div id="app">msg</div>
+  <dir id="adsasdas">
+    <span class="main">{{msg}} hello world</span>
+  </dir>
 </template>
 
 <script>

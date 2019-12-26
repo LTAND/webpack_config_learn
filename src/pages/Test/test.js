@@ -1,11 +1,8 @@
 import "./test.less"
-// import Vue from "Vue"
-// import App from "../Test/App.vue"
-// new Vue({
-  //   el: "#app",
-  //   render: h => h(App)
-  // })
+import Vue from "Vue"
+import App from "../Test/App.vue"
 
-let a = 1
-
-document.write(a)
+new Vue({
+  el:"#app",
+  render: h => h(App)
+})

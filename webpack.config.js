@@ -4,42 +4,45 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const OptimizeCss = require("optimize-css-assets-webpack-plugin")
+const VueLoaderPlugin = require('vue-loader/lib/plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
+
 const webpack = require("webpack")
 
 const pages = [
-  {                             
-    template: './src/pages/Home/home.html',  
-    filename: 'home.html'      
+  {
+    template: './src/pages/Home/home.html',
+    filename: 'home.html'
   },
   {
     template: "./src/pages/Test/test.html",
     filename: "test.html",
-    inject : 'head',                       // 指定生成的js文件是在head里还是在body里面,不写默认在body里面
-    chunks:["test"],                       // 引入入口的的test js文件
-    minify:{
-      removeComments : true,               // 删除注释
-      collapseInlineTagWhitespace : true,  // 去除换行符
-      collapseWhitespace : true,           // 压缩代码
-      removeAttributeQuotes:true,          // 删除引号
-    },    
-    hash:true                              // 引入加入?41f1591fbdcae2c85e5a
+    inject: 'body',                       // 指定生成的js文件是在head里还是在body里面,不写默认在body里面
+    chunks: ["test"],                       // 引入入口的的test js文件
+    minify: {
+      removeComments: true,               // 删除注释
+      collapseInlineTagWhitespace: true,  // 去除换行符
+      collapseWhitespace: true,           // 压缩代码
+      removeAttributeQuotes: true,          // 删除引号
+    },
+    hash: true                              // 引入加入?41f1591fbdcae2c85e5a
   }
 ]
 
 module.exports = {
-  optimization:{                          // 优化项
-    minimizer:[
+  optimization: {                          // 优化项
+    minimizer: [
       new OptimizeCss()                   // 压缩css插件
     ]
   },
 
-  mode:'development',                      // development | production
+  mode: 'development',                      // development | production
   entry: {
     test: './src/pages/Test/test.js'
   },
 
-  output: {                                  
-    path: path.resolve(__dirname, 'dist'),   
+  output: {
+    path: path.resolve(__dirname, 'dist'),
     filename: '[name].[hash:8].js',        // 哈希值8位
     // publicPath : 'http://kuma.com/',    // 给所有输出文件加上公共的地址头，满足上线要求。
     chunkFilename: '[name].chunk.[hash:8].js'
@@ -68,20 +71,20 @@ module.exports = {
       },
       {
         test: /\.css$/,                      // 正则匹配以.css结尾的文件
-        use: [{loader: 'style-loader',options:{insertAt:'top'}}, 'css-loader','postcss-loader']  // style-loader将css插入head的style标签中
+        use: [{ loader: 'style-loader', options: { insertAt: 'top' } }, 'css-loader', 'postcss-loader']  // style-loader将css插入head的style标签中
       },
       {
         test: /\.(scss|sass)$/,              // 正则匹配以.scss和.sass结尾的文件
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
-          use: ['css-loader', 'postcss-loader','sass-loader']
+          use: ['css-loader', 'postcss-loader', 'sass-loader']
         })
       },
       {
         test: /\.less$/,                     // 正则匹配以.less结尾的文件
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
-          use: ['css-loader', 'postcss-loader','less-loader']
+          use: ['css-loader', 'postcss-loader', 'less-loader']
         })
       },
       {
@@ -89,11 +92,11 @@ module.exports = {
         use: [{
           loader: 'url-loader',
           options: {
-            limit: 4 * 1024, // 小于4k 用把铯4
+            limit: 5 * 1024, // 小于4k 用base4
             name: 'img/[name].[hash:8].[ext]',
             // publicPath: 'img/',          // 将css中引用的背景图片打包到output.path + publicPath + name
             // outputPath: 'http:new.baidu.com/'     // 输出路径 http:new.baidu.com/
-  
+
             // fallback: { //此处无需配置file-loader的回调也可正常构建，url-loader会自动调用，并共享name等配置项目
             // 	loader: 'file-loader',
             // 	options: {
@@ -105,15 +108,24 @@ module.exports = {
           }
         }]
       },
-    ],
+      {
+        test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
+        loader: 'url-loader',
+        options: {
+          limit: 10000,
+          name: 'fonts/[name].[hash:7].[ext]'
+        }
+      }
+    ]
   },
   plugins: [                      // 插件对打包过程的影响，引用, 压缩，分离美化
     new CleanWebpackPlugin(),
+    new webpack.HotModuleReplacementPlugin(),
     new HtmlWebpackPlugin(pages[1]),
     new ExtractTextPlugin('[name].css'),
-
+    new VueLoaderPlugin(),
     // new webpack.ProvidePlugin:{  // 每个模块注入$
-        // main.js import "$" from "jquery"
+    // main.js import "$" from "jquery"
     //   $:"jquery"  
     // }
 
@@ -123,10 +135,15 @@ module.exports = {
     // }
 
     // 压缩输出的 JS 代码
-    // new UglifyJsPlugin({ // 最紧凑的输出
-    //   beautify: false,   // 删除所有的注释
-    //   comments: false,   // 忽略无关紧要的...
-    // }),
+    new UglifyJsPlugin({
+      uglifyOptions: {
+        parallel: true,      // 多进程并行运行,默认4
+        output: {            // 最紧凑的输出
+          beautify: false,   // 删除所有的注释
+          comments: false,   // 忽略无关紧要的...
+        }
+      }
+    }),
   ],
   devServer: {
     contentBase: path.join(__dirname, "dist"), // 服务器资源的根目录, 默认是当前执行的目录,一般是项目的根目录
@@ -148,10 +165,17 @@ module.exports = {
     //   }
     // },
   },
+  // resolve: {
+  //   extensions: ['.js', '.json', '.vue'],
+  //   alias: {
+  //     '@': path.join(__dirname, 'src')
+  //     // 'vue$': 'vue/dist/vue.esm.js'
+  //   }
+  // },
   /**
    * 
    * 
    * 
-   *  */ 
-  devtool: 'eval-source-map', // 生成对于打包后调试的完整的.map文件，但同时也会减慢打包速度
+   *  */
+  devtool: 'source-map', // 生成对于打包后调试的完整的.map文件，但同时也会减慢打包速度
 }
